@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, My Love</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink-light: #ffe4e9;
+            --pink-med: #ff85a1;
+            --pink-dark: #f05a7e;
+            --red: #ff4d6d;
+            --white: #ffffff;
+            --cream: #fff5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--pink-light) 0%, #fff 100%);
+            font-family: 'Quicksand', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #444;
+        }
+
+        /* --- Scene Management --- */
+        .scene {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            padding: 20px;
+            position: absolute;
+        }
+
+        .scene.active {
+            display: flex;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            background: var(--pink-dark);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(240, 90, 126, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: var(--red);
+        }
+
+        /* --- Cake Stage --- */
+        .cake-stage {
+            position: relative;
+            width: 300px;
+            height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .cake-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            z-index: 10;
+            cursor: default;
+        }
+
+        .layer {
+            width: 100%;
+            border-radius: 20px 20px 10px 10px;
+            position: absolute;
+            opacity: 0;
+            transform: translateY(-800px);
+            transition: all 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
+        }
+
+        .layer.dropped { opacity: 1; transform: translateY(0); }
+        .layer.settled { animation: gooeySettle 0.8s ease-out forwards; }
+
+        @keyframes gooeySettle {
+            0% { transform: scaleY(1); }
+            40% { transform: scaleY(0.8) scaleX(1.1); }
+            70% { transform: scaleY(1.05) scaleX(0.95); }
+            100% { transform: scaleY(1) scaleX(1); }
+        }
+
+        .layer-bottom { height: 80px; width: 220px; background: #f08080; bottom: 20px; z-index: 5; }
+        .layer-middle { height: 70px; width: 180px; background: #f4978e; bottom: 100px; z-index: 4; }
+        .layer-top { height: 60px; width: 140px; background: #ffb4a2; bottom: 170px; z-index: 3; }
+
+        /* --- Candles --- */
+        .candles-row {
+            position: absolute;
+            bottom: 230px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .candle {
+            width: 10px; height: 35px;
+            background: linear-gradient(to bottom, var(--white), var(--pink-light));
+            border-radius: 4px;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+            cursor: pointer;
+        }
+
+        .candle.visible { opacity: 1; transform: translateY(0); }
+        .flame {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 20px; background: #ffdb58;
+            border-radius: 50% 50% 20% 20%; box-shadow: 0 0 15px #ffdb58;
+            animation: flicker 0.6s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1); }
+            100% { transform: translateX(-50%) scale(1.1) rotate(2deg); opacity: 0.8; }
+        }
+
+        .candle.blown .flame { animation: blowOut 0.5s forwards; }
+        @keyframes blowOut {
+            0% { transform: translateX(-50%) scale(1); opacity: 1; }
+            100% { transform: translate(-20px, -20px) scale(0); opacity: 0; }
+        }
+
+        /* --- Wish Lock Progress --- */
+        .hold-progress-container {
+            width: 180px; height: 8px; background: rgba(0,0,0,0.05);
+            border-radius: 10px; position: absolute; bottom: -30px;
+            overflow: hidden; display: none; border: 1px solid var(--pink-light);
+            z-index: 30;
+        }
+        .hold-progress-bar {
+            width: 0%; height: 100%;
+            background: linear-gradient(to right, var(--pink-med), var(--red));
+        }
+
+        /* --- Splitting Animation --- */
+        .cake-container.split .layer-top { transform: translate(-150px, 80px) rotate(-25deg); opacity: 0; transition: all 1s ease-in; pointer-events: none; }
+        .cake-container.split .layer-middle { transform: translate(150px, 80px) rotate(25deg); opacity: 0; transition: all 1s ease-in; pointer-events: none; }
+        .cake-container.split .layer-bottom { transform: translateY(150px); opacity: 0; transition: all 1s ease-in; pointer-events: none; }
+
+        /* --- Gift Envelope (FINAL FIX) --- */
+        #gift-envelope {
+            width: 140px; height: 100px; background: var(--white);
+            border: 3px solid var(--pink-med); border-radius: 10px;
+            position: absolute; bottom: 100px; left: 50%;
+            margin-left: -70px;
+            display: none; 
+            z-index: 1000; /* Highest possible */
+            cursor: pointer;
+            box-shadow: 0 15px 35px rgba(240, 90, 126, 0.4);
+            justify-content: center; align-items: center;
+            font-size: 3rem; transform: scale(0);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            pointer-events: auto; /* Ensure it accepts clicks */
+        }
+
+        #gift-envelope.reveal { display: flex; transform: scale(1); animation: heartbeat 1.5s infinite; }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- Poem Page --- */
+        .poem-card {
+            background: var(--cream); width: 90%; max-width: 420px; height: 75vh;
+            border-radius: 15px; padding: 40px 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; border: 1px solid #f2e1c1;
+            position: relative;
+        }
+
+        .poem-content {
+            overflow-y: auto; flex-grow: 1; padding-right: 15px;
+            font-family: 'Dancing Script', cursive; font-size: 1.4rem;
+            line-height: 1.8; color: #4a4a4a; text-align: center;
+        }
+
+        .poem-content::-webkit-scrollbar { width: 6px; }
+        .poem-content::-webkit-scrollbar-thumb { background: var(--pink-med); border-radius: 10px; }
+
+        .hearts-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; }
+        .heart { position: absolute; color: var(--pink-med); opacity: 0.5; animation: float 5s linear infinite; }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hearts-bg" id="hearts"></div>
+
+    <div id="scene1" class="scene active">
+        <h1 style="margin-bottom: 2rem; color: var(--pink-dark); font-family: 'Dancing Script', cursive; font-size: 3rem;">Happy Birthday!</h1>
+        <button class="btn" onclick="startCakeScene()">Make a Birthday Cake 🎂</button>
+    </div>
+
+    <div id="scene2" class="scene">
+        <div class="cake-stage">
+            <div class="candles-row" id="candlesRow"></div>
+            
+            <div class="cake-container" id="cakeContainer">
+                <div id="layer3" class="layer layer-top"></div>
+                <div id="layer2" class="layer layer-middle"></div>
+                <div id="layer1" class="layer layer-bottom"></div>
+            </div>
+
+            <div id="gift-envelope" onclick="openLetterScene()">💌</div>
+
+            <div class="hold-progress-container" id="holdProgress">
+                <div class="hold-progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+        <p id="wish-text" style="color: var(--pink-dark); font-weight: 500; margin-top: 40px; opacity: 0; height: 24px;">Make a wish 💕</p>
+        <p id="instruction" style="margin-top:10px; font-size: 1.1rem; color: #f05a7e; font-weight: 500; min-height: 1.5em;">Baking with love...</p>
+    </div>
+
+    <div id="scene3" class="scene">
+        <h2 style="color: var(--pink-dark); margin-bottom: 15px; font-family: 'Dancing Script', cursive; font-size: 2.5rem;">A Special Gift</h2>
+        <p style="margin-bottom: 25px; line-height: 1.6; font-size: 1.1rem;">
+            I wanted to give you words that hold even a fraction of how special you are to me. This is for your birthday, for you, and for everything you are. I hope it makes you smile the way you make my days brighter just by being in them.
+        </p>
+        <p style="font-weight: bold; margin-bottom: 20px; color: var(--red);">Just a little something for you.💝</p>
+        <button class="btn" onclick="showPoem()">Open My Gift</button>
+    </div>
+
+    <div id="scene4" class="scene">
+        <div class="poem-card">
+            <h2 style="font-family: 'Dancing Script', cursive; color: var(--pink-dark); margin-bottom: 20px;">The Day the World Learned Softness</h2>
+            <div class="poem-content" id="finalPoem">
+                
+Today isn’t just your birthday.<br>
+It’s the day the world quietly decided<br>
+to be softer than it usually is.<br>
+The day kindness learned a new shape.<br>
+The day love gained a future<br>
+without knowing it yet.<br>
+
+<br>
+
+Somewhere, a long time ago,<br>
+the universe leaned in and whispered yes.<br>
+Yes to your laugh.<br>
+Yes to your warmth.<br>
+Yes to the way you exist<br>
+like a gentle correction to everything harsh.<br>
+
+<br>
+
+You carry light without trying to shine.<br>
+Your beauty does not compete.<br>
+It comforts.<br>
+It lives in your presence,<br>
+in the way even silence feels safer<br>
+when you are near.<br>
+
+<br>
+
+Being with you has taught me<br>
+that love doesn’t need to be loud<br>
+to be powerful.<br>
+Sometimes it’s just choosing each other,<br>
+again and again,<br>
+in the smallest moments.<br>
+
+<br>
+
+You make ordinary days meaningful.<br>
+You make heavy days survivable.<br>
+You make joy feel honest.<br>
+The world feels less sharp<br>
+because you are in it,<br>
+and I am endlessly grateful for that.<br>
+
+<br>
+
+Today, I don’t wish you perfection.<br>
+I wish you ease.<br>
+I wish you laughter that finds you without effort.<br>
+Mornings that welcome you gently,<br>
+and nights that keep you safe in their quiet.<br>
+
+
+<br>
+
+And selfishly,<br>
+I wish to keep walking beside you.<br>
+To keep learning you.<br>
+To keep loving you in ways<br>
+that grow deeper with time,<br>
+not smaller.<br>
+
+<br>
+
+Happy birthday,<br>
+to the one who makes my heart feel at home.<br>
+The world is better because you were born.<br>
+And my life is infinitely brighter<br>
+because I get to love you.<br>
+
+<br>
+
+<strong>Forever yours,</strong><br>
+Ishaan 🤍
+
+            </div>
+            <p style="margin-top: 20px; font-size: 0.9rem; color: var(--pink-med); font-style: italic;">🤍🦢🎀 I Love You 🎀🦢🤍</p>
+        </div>
+    </div>
+
+    <script>
+        let candlesBlown = 0;
+        let wishLocked = false;
+        let holdTimer;
+        let holdProgress = 0;
+
+        // Background Hearts
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+            const duration = Math.random() * 3 + 3;
+            heart.style.animationDuration = duration + 's';
+            document.getElementById('hearts').appendChild(heart);
+            setTimeout(() => heart.remove(), duration * 1000);
+        }
+        setInterval(createHeart, 400);
+
+        function switchScene(nextSceneId) {
+            document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+            document.getElementById(nextSceneId).classList.add('active');
+        }
+
+        // --- Sequence ---
+        function startCakeScene() {
+            switchScene('scene2');
+            setTimeout(() => dropLayer('layer1'), 400);
+            setTimeout(() => dropLayer('layer2'), 1000);
+            setTimeout(() => dropLayer('layer3'), 1600);
+            setTimeout(createCandles, 2800);
+        }
+
+        function dropLayer(id) {
+            const el = document.getElementById(id);
+            el.classList.add('dropped');
+            setTimeout(() => el.classList.add('settled'), 1200);
+        }
+
+        function createCandles() {
+            const row = document.getElementById('candlesRow');
+            for (let i = 0; i < 5; i++) {
+                const c = document.createElement('div');
+                c.className = 'candle';
+                c.innerHTML = '<div class="flame"></div>';
+                c.onclick = (e) => blowCandle(e, c);
+                row.appendChild(c);
+                setTimeout(() => c.classList.add('visible'), 200 * i);
+            }
+            document.getElementById('instruction').innerText = "Blow out each candle one by one... 🕯️(Click)";
+        }
+
+        function blowCandle(e, el) {
+            e.stopPropagation();
+            if (!el.classList.contains('blown')) {
+                el.classList.add('blown');
+                candlesBlown++;
+                if (candlesBlown === 5) {
+                    setTimeout(initiateWishLock, 600);
+                }
+            }
+        }
+
+        // --- Wish Lock Mechanic ---
+        function initiateWishLock() {
+            const instruction = document.getElementById('instruction');
+            const wishText = document.getElementById('wish-text');
+            const cakeContainer = document.getElementById('cakeContainer');
+            const progressContainer = document.getElementById('holdProgress');
+            const progressBar = document.getElementById('progressBar');
+
+            wishText.style.opacity = '1';
+            instruction.innerText = "Close your eyes... press and hold the cake for 5 seconds to lock your wish 💖";
+            progressContainer.style.display = 'block';
+
+            const startHold = (e) => {
+                if (wishLocked) return;
+                e.preventDefault();
+                holdTimer = setInterval(() => {
+                    holdProgress += 1; 
+                    progressBar.style.width = holdProgress + '%';
+                    if (holdProgress >= 100) {
+                        lockWish();
+                    }
+                }, 50);
+            };
+
+            const endHold = () => {
+                if (wishLocked) return;
+                clearInterval(holdTimer);
+                if (holdProgress < 100) {
+                    holdProgress = 0;
+                    progressBar.style.width = '0%';
+                    instruction.innerText = "Don't let go! Hold for the full 5 seconds.";
+                }
+            };
+
+            cakeContainer.addEventListener('mousedown', startHold);
+            cakeContainer.addEventListener('touchstart', startHold);
+            window.addEventListener('mouseup', endHold);
+            window.addEventListener('touchend', endHold);
+        }
+
+        function lockWish() {
+            wishLocked = true;
+            clearInterval(holdTimer);
+            document.getElementById('holdProgress').style.display = 'none';
+            document.getElementById('instruction').innerText = "Wish Locked! ✨ Now, click the cake to see what's inside.";
+            document.getElementById('cakeContainer').style.cursor = 'pointer';
+            document.getElementById('cakeContainer').addEventListener('click', splitCake);
+            document.getElementById('cakeContainer').style.animation = 'heartbeat 1s infinite alternate';
+        }
+
+        // --- The Reveal (Final Click Fix) ---
+        function splitCake() {
+            if(!wishLocked) return;
+            const container = document.getElementById('cakeContainer');
+            const envelope = document.getElementById('gift-envelope');
+            const candles = document.getElementById('candlesRow');
+            
+            
+            if(candles) candles.remove(); 
+            document.getElementById('wish-text').style.opacity = '0';
+            document.getElementById('instruction').style.opacity = '0';
+            
+            container.classList.add('split');
+            container.style.pointerEvents = 'none';
+            
+            setTimeout(() => {
+                envelope.classList.add('reveal');
+                
+                envelope.style.zIndex = "2000";
+            }, 800);
+        }
+
+        function openLetterScene() {
+            switchScene('scene3');
+        }
+
+        function showPoem() {
+            switchScene('scene4');
+        }
+    </script>
+</body>
+</html>
